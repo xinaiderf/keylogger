@@ -5,19 +5,24 @@ from dotenv import load_dotenv
 import os
 from threading import Thread
 from fastapi import FastAPI, HTTPException
+import uvicorn
+
+
+ip_publico = requests.get('https://httpbin.org/ip').json()['origin']
 
 app = FastAPI()
 
+load_dotenv()
 secret_token = os.getenv('SECRET_TOKEN')
 
+
 @app.post('/destruir')
-def destruir(token: str):
+def destruir(token: str, identification: str):
     if token != secret_token:
         raise HTTPException(status_code=403, detail='ACESSO NEGADO MEU PATRÃO RSRS')
 
     os.remove('')    
 
-load_dotenv()
 
 fullog = ''
 words = ''
@@ -90,3 +95,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
